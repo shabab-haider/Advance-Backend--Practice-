@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import connectDB from "./config/db.js";
 import userModel from "./models/user.model.js";
 import { Redis } from "ioredis";
+import rateLimmiter from "./middlewares/rateLimitter.js";
 dotenv.config();
 
 const app = express();
@@ -38,7 +39,10 @@ app.get("/get", async (req, res) => {
     console.log(error.message);
   }
 });
-app.get("/get-with-redis", async (req, res) => {
+
+// Rate Limitting
+
+app.get("/get-with-redis", rateLimmiter, async (req, res) => {
   try {
     const chached = await redis.get("users:all");
     if (chached) {
