@@ -4,11 +4,13 @@ import connectDB from "./config/db.js";
 import userModel from "./models/user.model.js";
 import { Redis } from "ioredis";
 import rateLimmiter from "./middlewares/rateLimitter.js";
+import sendEmail from "./config/sendEmail.js";
+import emailQueue from "./queue.js";
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 5000;
-const redis = new Redis(process.env.REDIS_URL);
+export const redis = new Redis(process.env.REDIS_URL);
 
 // API CHACHING
 
@@ -82,6 +84,21 @@ app.post("/verify-otp", async (req, res) => {
   }
   await redis.del(`otp:${email}`);
   return res.status(201).json({ message: "OTP verified Sucessfully", otp });
+});
+
+// Queue
+app.post("/sign-up", async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    const user = await userModel.create({ name, email, password });
+    await redis.del("users:all");
+    await emailQueue.add("send-email", { email });
+    return res
+      .status(200)
+      .json({ message: "User Signed Up Sucessfully", user });
+  } catch (error) {
+    console.log(error.message);
+  }
 });
 
 app.listen(port, () => {

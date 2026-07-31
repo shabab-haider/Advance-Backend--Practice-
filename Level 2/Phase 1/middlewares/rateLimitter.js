@@ -1,11 +1,10 @@
-import Redis from "ioredis";
+import { redis } from "../index.js";
 
-const redis = new Redis(process.env.REDIS_URL);
 const rateLimmiter = async (req, res, next) => {
   const ip = req.ip;
   const key = `rate_limit:${ip}`;
   const requests = await redis.incr(key);
-  
+
   // Set the TTL to 30 seconds only if the key doesn't already have an expiry (using the NX option).
   // This is a self-healing mechanism that prevents keys from getting stuck with a TTL of -1.
   await redis.expire(key, 30, "NX");
