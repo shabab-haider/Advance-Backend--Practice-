@@ -7,12 +7,14 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 app.get("/", (req, res) => {
-  res.status(200).json({ message: "Hi from Gateway" });
+  res
+    .status(200)
+    .json({ message: `Hi from Gateway ${process.env.GATEWAY_NAME}` });
 });
 
-app.use("/auth", proxy("http://localhost:8001"));
-app.use("/order", proxy("http://localhost:8002"));
-app.use("/products", proxy("http://localhost:8003"));
+app.use("/auth", proxy("http://auth-service:8001"));
+app.use("/order", proxy("http://order-service:8002"));
+app.use("/products", proxy("http://products-service:8003"));
 
 app.listen(port, () => {
   console.log(`Runing on ${port}`);

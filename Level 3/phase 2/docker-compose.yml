@@ -1,0 +1,32 @@
+services:
+  nginx:
+    image: nginx
+    ports: [8080:80]
+    volumes: ["./nginx/nginx.conf:/etc/nginx/nginx.conf"]
+  auth-service:
+    build: ./backend/services/auth
+    env_file:
+      - ./backend/services/auth/.env
+    ports: [5001:8001]
+  order-service:
+    build: ./backend/services/order
+    env_file:
+      - ./backend/services/order/.env
+    ports: [5002:8002]
+  products-service:
+    build: ./backend/services/products
+    env_file:
+      - ./backend/services/products/.env
+    ports: [5003:8003]
+  gateway1:
+    build: ./backend/gateway
+    env_file: ./backend/gateway/.env
+    ports: [7001:8000]
+    environment:
+      - GATEWAY_NAME= 1st gateway
+  gateway2:
+    build: ./backend/gateway
+    env_file: ./backend/gateway/.env
+    ports: [7002:8000]
+    environment:
+      - GATEWAY_NAME= 2nd gateway
