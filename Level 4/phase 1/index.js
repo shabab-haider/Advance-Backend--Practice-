@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import { GoogleGenAI } from "@google/genai";
 import { ChatGroq } from "@langchain/groq";
+import { Annotation, StateGraph } from "@langchain/langgraph";
 dotenv.config();
 
 const app = express();
@@ -41,15 +42,42 @@ app.use(express.urlencoded({ extended: true }));
 //   res.status(200).json({ ai: response.text });
 // });
 
-
 const llm = new ChatGroq({
   model: "llama-3.1-8b-instant",
+  temperature: 0.0,
 });
+
+const state = Annotation.Root({
+  prompt: Annotation,
+  aiMsg: Annotation,
+});
+
+const callLLM = async (state) => {
+  const response = await llm.invoke([
+    {
+      role: "system",
+      content:
+        "You are a assisstant and your name is Jarvis. Don't give false information if you don't have access to actual data",
+    },
+
+    {
+      role: "human",
+      content: state.prompt,
+    },
+  ]);
+  return { aiMsg: response.content };
+};
+
+const graph = new StateGraph(state)
+  .addNode("agent", callLLM)
+  .addEdge("__start__", "agent")
+  .addEdge("agent", "__end__")
+  .compile();
 
 app.post("/ai", async (req, res) => {
   const { input } = req.body;
-  const response = await llm.invoke(input);
-  res.status(200).json({ ai: response.content });
+  const response = await graph.invoke({ prompt: input });
+  res.status(200).json({ ai: response });
 });
 
 app.get("/", (req, res) => {
